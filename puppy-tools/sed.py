@@ -44,13 +44,17 @@ class ColorFormatter(object):
                 'y': curses.tparm(fg_color, 3), # Yellow
                 'b': curses.tparm(fg_color, 4), # Blue
             }
+            self._bold = curses.tigetstr('bold')
             self._normal = curses.tigetstr('sgr0')
         else:
             self._colors = {}
+            self._bold = ''
             self._normal = ''
 
-    def format(self, message, color=None):
-        return self._colors.get(color, self._normal) + message + self._normal
+    def format(self, message, color, bold=False):
+        return (self._colors.get(color, self._normal) +
+                (self._bold if bold else '') +
+                message + self._normal)
 
 
 class ColorWriter(object):
@@ -135,7 +139,7 @@ def prepare_patterns(pattern, pattern_file):
 
 def replace_line(s, patterns, verbose=False, fname=None, lineno=None):
     def colored_message(m):
-        return color_formatter.format(m.group(0), 'r')
+        return color_formatter.format(m.group(0), 'r', bold=True)
 
     if verbose:
         verbose_line = s
