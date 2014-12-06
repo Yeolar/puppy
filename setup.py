@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name='puppy-tools',
+    name='puppytools',
     version='0.1',
     description='puppy-tools is a collection of simple and easy-used tools',
     long_description=open('README.md').read().split('\n\n', 1)[1],
@@ -20,7 +20,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'pp-sed = puppy-tools.sed:main',
+            'pp-ipsender = puppytools.ipsender:main',
+            'pp-sed = puppytools.sed:main',
         ]
     },
 )
