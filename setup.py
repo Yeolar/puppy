@@ -11,7 +11,8 @@ setup(
     name='puppytools',
     version='0.1',
     description='puppy-tools is a collection of simple and easy-used tools',
-    long_description=open('README.md').read().split('\n\n', 1)[1],
+    long_description=open('README.md').read(),
+    license='GPLv2',
     author='Yeolar',
     author_email='yeolar@gmail.com',
     url='http://www.yeolar.com',
@@ -20,6 +21,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
+            'pp-config = puppytools.config:main',
             'pp-ipsender = puppytools.ipsender:main',
             'pp-sed = puppytools.sed:main',
         ]

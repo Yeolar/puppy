@@ -221,8 +221,6 @@ def main():
                     type=file, help='specify the pattern file')
     ap.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                     help='show replace details')
-    ap.add_argument('-V', '--version', action='version',
-                    version='%(prog)s - by Yeolar <yeolar@gmail.com>')
     ap.add_argument('-x', '--examine', action='store_true', dest='examine',
                     help='examine but not really do')
     args = ap.parse_args()
