@@ -22,6 +22,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pp-config = puppytools.config:main',
+            'pp-htmlparser = puppytools.htmlparser:main',
             'pp-ipsender = puppytools.ipsender:main',
             'pp-sed = puppytools.sed:main',
         ]

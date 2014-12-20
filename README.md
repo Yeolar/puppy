@@ -10,7 +10,7 @@ A collection of simple and easy-used tools.
 Install:
 --------
 
-You need config puppy-tools after the installation.
+You should config puppy-tools first after the installation.
 
     $ sudo python setup.py install
     $ pp-config

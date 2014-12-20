@@ -19,6 +19,7 @@ PROG_NAME = 'pp-ipsender'
 
 
 def get_ip_address(ifname):
+    # another way: `ip -f inet addr show IFNAME`
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return socket.inet_ntoa(fcntl.ioctl(
         s.fileno(),
