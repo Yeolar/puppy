@@ -155,6 +155,7 @@ def replace_line(s, patterns, verbose=False, fname=None, lineno=None):
 
 def replace(f, output, patterns, show_fname, args):
     tmp = tempfile.SpooledTemporaryFile(max_size=1048576)
+    replaced = False
 
     with open(f) as fp:
         fname = os.path.basename(f) if show_fname else None
@@ -164,6 +165,8 @@ def replace(f, output, patterns, show_fname, args):
                     verbose=args.verbose, fname=fname, lineno=lineno)
             tmp.write(repl_line)
             lineno += 1
+            if not replaced and repl_line != line:
+                replaced = True
 
     if args.examine:
         tmp.close()
@@ -171,19 +174,20 @@ def replace(f, output, patterns, show_fname, args):
 
     tmp.seek(0)
 
-    if args.inplace:
-        os.rename(f, f + '.old')
-        with open(f, 'w') as fp:
-            fp.write(tmp.read())
-    elif args.clean_inplace:
-        with open(f, 'w') as fp:
-            fp.write(tmp.read())
-    elif output:
+    if output:
         with open(output, 'w') as fp:
             fp.write(tmp.read())
-    else:
-        with open(f + '.new', 'w') as fp:
-            fp.write(tmp.read())
+    elif replaced:
+        if args.inplace:
+            os.rename(f, f + '.old')
+            with open(f, 'w') as fp:
+                fp.write(tmp.read())
+        elif args.clean_inplace:
+            with open(f, 'w') as fp:
+                fp.write(tmp.read())
+        else:
+            with open(f + '.new', 'w') as fp:
+                fp.write(tmp.read())
 
     tmp.close()
 

@@ -6,6 +6,7 @@ A collection of simple and easy-used tools.
 - pp-config: Config puppy-tools.
 - pp-sed: A sed-like replace tool.
 - pp-ipsender: An IP mail sender.
+- pp-htmlparser: An HTML parser.
 
 Install:
 --------
