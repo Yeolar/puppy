@@ -127,6 +127,18 @@ class ReplacePattern(object):
         return cls(*splited)
 
 
+def extend_directories(paths):
+    all_files = []
+    for path in paths:
+        if os.path.isdir(path):
+            for root, dirs, files in os.walk(path):
+                for name in files:
+                    all_files.append(os.path.join(root, name))
+        else:
+            all_files.append(path)
+    return all_files
+
+
 def prepare_patterns(pattern, pattern_file):
     patterns = []
     if pattern:
@@ -223,13 +235,18 @@ def main():
                     help='specify the pattern') # '/from/to/ig', i&g is optional
     ap.add_argument('-f', '--pattern-file', action='store', dest='pattern_file',
                     type=file, help='specify the pattern file')
+    ap.add_argument('-r', '--recursive', action='store_true', dest='recursive',
+                    help='operate recursively')
     ap.add_argument('-v', '--verbose', action='store_true', dest='verbose',
                     help='show replace details')
     ap.add_argument('-x', '--examine', action='store_true', dest='examine',
                     help='examine but not really do')
     args = ap.parse_args()
 
-    input_files = args.input
+    if args.recursive:
+        input_files = extend_directories(args.input)
+    else:
+        input_files = args.input
 
     if len(input_files) > 1 and args.output:
         ap.error('Should not set output when multi-input.')
@@ -240,7 +257,10 @@ def main():
     show_fname = len(input_files) > 1
 
     for input in input_files:
-        replace(input, args.output, patterns, show_fname, args)
+        if os.path.isfile(input):
+            replace(input, args.output, patterns, show_fname, args)
+        else:
+            print "Ignore non-regular file path: '%s'" % input
 
 
 if __name__ == '__main__':

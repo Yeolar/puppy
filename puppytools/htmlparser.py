@@ -7,6 +7,7 @@
 import argparse
 import urllib2
 from HTMLParser import HTMLParser
+from xml.etree import ElementTree
 
 
 PROG_NAME = 'pp-htmlparser'
@@ -66,23 +67,37 @@ def main():
     ap = argparse.ArgumentParser(
             prog=PROG_NAME,
             description='Parse html, '
-                        'extract attribute value and data of html tag.',
+                        'extract attribute value and data of html element.',
             epilog='Author: Yeolar <yeolar@gmail.com>')
     ap.add_argument('input', nargs='+',
                     help='input file')
-    ap.add_argument('-t', '--tag', action='store', dest='tag', required=True,
-                    help='tag to parse')
+    ap.add_argument('-e', '--element', action='store', dest='element',
+                    help='element to parse')
     ap.add_argument('-a', '--attr', action='store', dest='attr',
                     help='attribute to parse')
     ap.add_argument('-d', '--data', action='store_true', dest='parse_data',
                     help='parse data')
+    ap.add_argument('-x', '--xpath', action='store', dest='xpath',
+                    help='xpath to parse')
     args = ap.parse_args()
 
     input_files = args.input
+
+    if args.xpath:
+        for input_file in input_files:
+            if input_file.startswith('http://'):
+                fp = urllib2.urlopen(input_file)
+                root = ElementTree.fromstring(fp.read())
+                print root.findall(args.xpath)
+                fp.close()
+            else:
+                with open(input_file) as fp:
+                    root = ElementTree.fromstring(fp.read())
+        return
+
     if not args.attr and not args.parse_data:
         ap.error('Should specify --attr or open --data.')
-
-    parser = SingleParser(args.tag, args.attr, args.parse_data)
+    parser = SingleParser(args.element, args.attr, args.parse_data)
 
     for input_file in input_files:
         if input_file.startswith('http://'):
