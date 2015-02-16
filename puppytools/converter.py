@@ -21,11 +21,17 @@ OUTPUT_SFLAG = '{O}'
 
 def parse_rename_map(map_file):
     rename_map = {}
+    index = 1
 
     if map_file:
         for line in map_file:
             if os.pathsep in line:
                 ap.error('Should not use path seperator in filename.')
+
+            if MAP_SPLIT not in line:
+                rename_map[line.strip()] = str(index)
+                index += 1
+                continue
 
             input_base, _, output_base = line.partition(MAP_SPLIT)
             input_base = input_base.strip()
@@ -81,7 +87,9 @@ converting command format:
 
 rename map file format:
   "INPUT_BASENAME = OUTPUT_BASENAME" as each line pattern of the file.
-  Note the split chars is " = ".'''
+  Note the split chars is " = ".
+  An alternative pattern is "INPUT_BASENAME" for each line, when the output's
+  basename will be increasing number start from 1.'''
 
 
 def main():
