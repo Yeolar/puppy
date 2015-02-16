@@ -37,7 +37,11 @@ def parse_rename_map(map_file):
 
 
 def generate_filename(input, rename_map, args):
-    dirname = os.path.dirname(input)
+    if args.directory:
+        dirname = os.path.abspath(args.directory)
+    else:
+        dirname = os.path.dirname(input)
+
     input_base, input_ext = os.path.splitext(os.path.basename(input))
     output_base = '%s%s%s' % (args.prefix or '',
                               rename_map.get(input_base, input_base),
@@ -101,6 +105,8 @@ def main():
                     help='set basename suffix')
     ap.add_argument('-m', '--rename-mapfile', action='store', dest='rename_map',
                     type=file, help='rename map file')
+    ap.add_argument('-d', '--directory', action='store', dest='directory',
+                    help='output directory, default to the same as input')
     ap.add_argument('-x', '--examine', action='store_true', dest='examine',
                     help='examine but not really do')
     ap.add_argument('-v', '--verbose', action='store_true', dest='verbose',
@@ -111,6 +117,12 @@ def main():
         ap.error('INPUT flag setup error in command.')
     if args.command.count(OUTPUT_FLAG) + args.command.count(OUTPUT_SFLAG) != 1:
         ap.error('OUTPUT flag setup error in command.')
+
+    if args.directory:
+        if not os.path.exists(args.directory):
+            os.makedirs(args.directory, mode=0755)
+        elif not os.path.isdir(args.directory):
+            ap.error('invalid output directory.')
 
     rename_map = parse_rename_map(args.rename_map)
 
