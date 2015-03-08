@@ -8,6 +8,7 @@ A collection of simple and easy-used tools.
 - pp-sed: A sed-like replace tool.
 - pp-ipsender: An IP mail sender.
 - pp-htmlparser: An HTML parser.
+- pp-genstrings: A similar tool of Mac's genstrings.
 
 Install:
 --------

@@ -23,6 +23,7 @@ setup(
         'console_scripts': [
             'pp-config = puppytools.config:main',
             'pp-convert = puppytools.converter:main',
+            'pp-genstrings = puppytools.genstrings:main',
             'pp-htmlparser = puppytools.htmlparser:main',
             'pp-ipsender = puppytools.ipsender:main',
             'pp-sed = puppytools.sed:main',
