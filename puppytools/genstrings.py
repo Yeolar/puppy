@@ -12,17 +12,17 @@ import re
 PROG_NAME = 'pp-genstrings'
 
 
-STR_RE = '\s*@"[^"]+"\s*'
-VAR_RE = '\s*\w+\s*'
+DEF_TABLE = 'Localizable'
+NO_COMMENT = 'No comment provided by engineer.'
 
-BASE_RE    = ('%%s\s*\((%(s)s),(%(s)s|%(v)s)\)'
-                % {'s': STR_RE, 'v': VAR_RE})
-TABLE_RE   = ('%%sFromTable\s*\((%(s)s),(%(s)s),(%(s)s|%(v)s)\)'
-                % {'s': STR_RE, 'v': VAR_RE})
-BUNDLE_RE  = ('%%sFromTableInBundle\s*\((%(s)s),(%(s)s),%(v)s,(%(s)s|%(v)s)\)'
-                % {'s': STR_RE, 'v': VAR_RE})
-DEFAULT_RE = ('%%sWithDefaultValue\s*\((%(s)s),(%(s)s),%(v)s,%(s)s,(%(s)s|%(v)s)\)'
-                % {'s': STR_RE, 'v': VAR_RE})
+STR_RE = '\s*@"[^"]*"\s*'
+VAR_RE = '\s*\w+\s*'
+D = {'s': STR_RE, 'v': VAR_RE}
+
+BASE_RE = '%%s\s*\((%(s)s),(%(s)s|%(v)s)\)' % D
+TABLE_RE = '%%sFromTable\s*\((%(s)s),(%(s)s),(%(s)s|%(v)s)\)' % D
+BUNDLE_RE = '%%sFromTableInBundle\s*\((%(s)s),(%(s)s),%(v)s,(%(s)s|%(v)s)\)' % D
+DEFAULT_RE = '%%sWithDefaultValue\s*\((%(s)s),(%(s)s),%(v)s,%(s)s,(%(s)s|%(v)s)\)' % D
 
 
 def prepare_patterns(routine):
@@ -35,86 +35,119 @@ def prepare_patterns(routine):
         routine = (routine,)
 
     for r in routine:
-        base_patterns.append(BASE_RE % r)
-        table_patterns.append(TABLE_RE % r)
-        table_patterns.append(BUNDLE_RE % r)
-        table_patterns.append(DEFAULT_RE % r)
+        base_patterns.append(re.compile(BASE_RE % r))
+        table_patterns.append(re.compile(TABLE_RE % r))
+        table_patterns.append(re.compile(BUNDLE_RE % r))
+        table_patterns.append(re.compile(DEFAULT_RE % r))
 
     return base_patterns, table_patterns
 
 
 def create_table(table_dict, table_key, directory, append):
-    if table_key not in table_dict:
-        table_dict[table_key] = {}
+    if table_key in table_dict:
+        return
+
+    table_dict[table_key] = {}
 
     if not append:
         return
 
     with open(os.path.join(directory, table_key + '.strings')) as fp:
         table = '\n'.join([l.strip() for l in fp.readlines()])
+
         for block in table.split('\n\n'):
             comment_block, _, kv_block = block.partition('*/')
+
             comments = comment_block[2:].strip().split('\n')
-            m = re.match('^"([^"]+)" = "([^"]+)";', kv_block)
+            if comments[0] == NO_COMMENT:
+                comments = tuple()
+
+            m = re.search('"([^"]+)" = "([^"]+)";', kv_block)
             if m:
                 table_dict[table_key][m.group(1)] = (m.group(2), [], comments)
 
 
 def update_table(table_dict, table_key, key, comment):
-    table_key = table_key.strip().strip('@"')
-    key = key.strip().strip('@"')
-    comment = comment.strip().strip('@"')
-
-    old_value = table_dict[table_key][key][0]
-    old_comments = table_dict[table_key][key][2]
+    def append(l, new):
+        if new and new not in l: l.append(new)
+        return l
 
     if key not in table_dict[table_key]:
-        table_dict[table_key][key] = (key, [comment])
+        table_dict[table_key][key] = (
+                key,
+                append([], comment),
+                tuple())
     else:
-        if comment not in old_comments:
-            table_dict[table_key][key] = (key, [comment], old_comments)
+        old_value = table_dict[table_key][key][0]
+        new_comments = table_dict[table_key][key][1]
+        old_comments = table_dict[table_key][key][2]
+
+        if key != old_value and comment not in old_comments:
+            table_dict[table_key][key] = (
+                    key,
+                    append(new_comments, comment),
+                    old_comments)
         else:
-            table_dict[table_key][key][1].append(comment)
+            append(new_comments, comment)
 
 
-def extract(f, table_dict, base_patterns, table_patterns, args):
-    output_dir = args.output_dir
+def extract(f, output_dir, table_dict, base_patterns, table_patterns, args):
+    def strip_value(v, is_var=False):
+        if is_var and re.match(VAR_RE, v):  # ugly set all variables
+            v = '@""'
+        return v.strip()[2:-1]
 
     with open(f) as fp:
         src = ''.join([l.strip() for l in fp.readlines()])
+
         for p in base_patterns:
             for m in p.finditer(src):
-                create_table(table_dict, 'Localized', output_dir, args.append)
-                update_table(table_dict, 'Localized', m.group(1), m.group(2))
+                key = strip_value(m.group(1))
+                comment = strip_value(m.group(2))
+                if not key:  # empty key
+                    continue
+                create_table(table_dict, DEF_TABLE, output_dir, args.append)
+                update_table(table_dict, DEF_TABLE, key, comment)
+
         for p in table_patterns:
             for m in p.finditer(src):
-                if args.table == m.group(2):  # skip table
+                key = strip_value(m.group(1))
+                table = strip_value(m.group(2))
+                comment = strip_value(m.group(3))
+                if not key or not table:  # empty key or table
                     continue
-                create_table(table_dict, m.group(2), output_dir, args.append)
-                update_table(table_dict, m.group(2), m.group(1), m.group(3))
+                if args.table == table:  # skip table
+                    continue
+                create_table(table_dict, table, output_dir, args.append)
+                update_table(table_dict, table, key, comment)
 
 
-def sync(table_dict, output_dir, args):
+def sync(output_dir, table_dict, args):
     def sort_key(l):
+        if len(l) == 0: return ''
         return sorted(l, cmp=lambda x,y: cmp(x.lower(), y.lower()))[0].lower()
+
+    key_cmp = lambda x,y: cmp(x[0].lower(), y[0].lower())
+    comment_cmp = lambda x,y: cmp(sort_key(x[1][1]), sort_key(y[1][1]))
 
     for table_key in table_dict:
         with open(os.path.join(output_dir, table_key + '.strings'), 'w') as fp:
             if args.comment_sorted:
-                table = sorted(table_dict[table_key].items(),
-                        cmp=lambda x,y: cmp(sort_key(x[1]), sort_key(y[1])))
+                table = sorted(table_dict[table_key].items(), cmp=comment_cmp)
             else:
-                table = sorted(table_dict[table_key].items(),
-                        cmp=lambda x,y: cmp(x[0].lower(), y[0].lower()))
+                table = sorted(table_dict[table_key].items(), cmp=key_cmp)
 
             for key, value in table:
                 if len(value[1]) > 1 and not args.quiet:
                     print 'Warning: Key "%s" used with multiple comments %s' % (
-                            key, ' & '.join(['"%s"' for c in value[1]]))
-                fp.write('/* ' + value[1][0])
-                for comment in value[1][1:]:
-                    fp.write('\n   ' + comment)
-                fp.write(' */\n')
+                            key, ' & '.join(['"%s"' % c for c in value[1]]))
+                if len(value[1]) == 0:
+                    fp.write('/* ' + NO_COMMENT + ' */\n')
+                else:
+                    fp.write('/* ' + value[1][0])
+                    for comment in value[1][1:]:
+                        fp.write('\n   ' + comment)
+                    fp.write(' */\n')
                 fp.write('"%s" = "%s";\n\n' % (key, value[0]))
 
 
@@ -149,17 +182,19 @@ def main():
     args = ap.parse_args()
 
     input_files = args.input
+    output_dir = os.path.abspath(args.output_dir or '.')
 
     base_patterns, table_patterns = prepare_patterns(args.routine)
     table_dict = {}
 
     for input in input_files:
         if os.path.isfile(input):
-            extract(input, table_dict, base_patterns, table_patterns, args)
+            extract(input, output_dir, table_dict,
+                    base_patterns, table_patterns, args)
         else:
             print "Ignore non-regular file path: '%s'" % input
 
-    sync(table_dict, args.output_dir, args)
+    sync(output_dir, table_dict, args)
 
 
 if __name__ == '__main__':
