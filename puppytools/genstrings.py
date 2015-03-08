@@ -5,6 +5,7 @@
 #
 
 import argparse
+import codecs
 import os
 import re
 
@@ -52,7 +53,9 @@ def create_table(table_dict, table_key, directory, append):
     if not append:
         return
 
-    with open(os.path.join(directory, table_key + '.strings')) as fp:
+    strings_file = os.path.join(directory, table_key + '.strings')
+
+    with codecs.open(strings_file, 'r', 'utf-16') as fp:
         table = '\n'.join([l.strip() for l in fp.readlines()])
 
         for block in table.split('\n\n'):
@@ -131,7 +134,9 @@ def sync(output_dir, table_dict, args):
     comment_cmp = lambda x,y: cmp(sort_key(x[1][1]), sort_key(y[1][1]))
 
     for table_key in table_dict:
-        with open(os.path.join(output_dir, table_key + '.strings'), 'w') as fp:
+        strings_file = os.path.join(output_dir, table_key + '.strings')
+
+        with codecs.open(strings_file, 'w', 'utf-16') as fp:
             if args.comment_sorted:
                 table = sorted(table_dict[table_key].items(), cmp=comment_cmp)
             else:
