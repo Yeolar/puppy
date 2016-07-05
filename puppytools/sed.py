@@ -80,14 +80,17 @@ color_writer = ColorWriter(color_formatter)
 
 class ReplacePattern(object):
 
-    FLAG_MAP = { 'i': re.I, }
+    FLAG_MAP = { 'i': re.I, 's': re.S, 'u': re.U, }
 
     def __init__(self, fr, to, flags=0):
         self.fr = fr
         self.to = to
         self.count = 0 if 'g' in flags else 1   # 0 means all
         self.flags = self.bit_flags(flags)
-        self.pattern = re.compile(self.fr, self.flags)
+        self.frpattern = re.compile(self.fr, self.flags)
+        self.topattern = re.compile(self.to)
+        if self.frpattern.groups > 1:
+            raise ValueError('Pattern group count > 1')
 
     def __str__(self):
         return '(%s, %s)' % (self.fr, self.to)
@@ -150,18 +153,36 @@ def prepare_patterns(pattern, pattern_file):
 
 
 def replace_line(s, patterns, verbose=False, fname=None, lineno=None):
-    def colored_message(m):
-        return color_formatter.format(m.group(0), 'r', bold=True)
+    def red_message(m):
+        if len(m.groups()) > 0:
+            return (m.string[m.start():m.start(1)] +
+                    color_formatter.format(m.group(1), 'r', bold=True) +
+                    m.string[m.end(1):m.end()])
+        else:
+            return color_formatter.format(m.group(0), 'r', bold=True)
+    def green_message(m):
+        return color_formatter.format(m.group(0), 'g', bold=True)
 
     if verbose:
-        verbose_line = s
+        verbose_line1 = s
+        verbose_line2 = s
     for p in patterns:
-        s = p.pattern.sub(p.to, s, count=p.count)
+        def repl(m):
+            if len(m.groups()) > 0:
+                return (m.string[m.start():m.start(1)] +
+                        p.to +
+                        m.string[m.end(1):m.end()])
+            else:
+                return p.to
+        s = p.frpattern.sub(repl, s, count=p.count)
         if verbose:
-            verbose_line = p.pattern.sub(
-                    colored_message, verbose_line, count=p.count)
-    if verbose and verbose_line != s:
-        color_writer.write(verbose_line.rstrip(), fname, lineno)
+            verbose_line1 = p.frpattern.sub(
+                    red_message, verbose_line1, count=p.count)
+            verbose_line2 = p.topattern.sub(
+                    green_message, s, count=p.count)
+    if verbose and verbose_line1 != s:
+        color_writer.write(verbose_line1.rstrip(), fname, lineno)
+        color_writer.write(verbose_line2.rstrip(), fname, lineno)
     return s
 
 
