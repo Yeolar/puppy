@@ -1,37 +1,47 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014, Yeolar <yeolar@gmail.com>
+# Copyright 2014 Yeolar
 #
 
 import argparse
-import config
-import ConfigParser
 import fcntl
 import os
 import smtplib
 import socket
 import struct
+import sys
 from email.mime.text import MIMEText
 
+from puppytools.util.colors import *
+from puppytools.util.config import load_config
 
-PROG_NAME = 'pp-ipsender'
+
+PROG_NAME = os.path.splitext(os.path.basename(__file__))[0]
+
+CONF = load_config(PROG_NAME)
 
 
 def get_ip_address(ifname):
     # another way: `ip -f inet addr show IFNAME`
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    return socket.inet_ntoa(fcntl.ioctl(
-        s.fileno(),
-        0x8915,  # SIOCGIFADDR
-        struct.pack('256s', ifname[:15])
-    )[20:24])
+    try:
+        return socket.inet_ntoa(fcntl.ioctl(
+            s.fileno(),
+            0x8915,  # SIOCGIFADDR
+            struct.pack('256s', ifname[:15])
+        )[20:24])
+    except IOError as e:
+        print red('Error: "%s" for %s' % (e, ifname))
+        sys.exit(1)
 
 
 def update_records(record_file, ip):
     update = False
 
-    os.makedirs(os.path.dirname(record_file))
+    dir = os.path.dirname(record_file)
+    if not os.path.exists(dir):
+        os.makedirs(os.path.dirname(record_file))
 
     with open(record_file, 'a+') as fp:
         lines = fp.readlines()
@@ -66,25 +76,17 @@ class MailSender(object):
 
 
 def main():
-    default_conf_file = config.DEFAULT_CONF_FILE
-
     ap = argparse.ArgumentParser(
-            prog=PROG_NAME,
+            prog='pp-' + PROG_NAME,
             description='An IP mail sender.',
             epilog='Author: Yeolar <yeolar@gmail.com>')
-    ap.add_argument('-c', '--conf', action='store', dest='conf_file', type=file,
-                    default=os.path.expanduser(default_conf_file),
-                    help='configuration file, default: %s' % default_conf_file)
     args = ap.parse_args()
 
-    conf = config.Config()
-    conf.read_config_fp('pp-ipsender', args.conf_file)
+    ip = get_ip_address(CONF.IFNAME)
+    sender = MailSender(CONF.MAIL_SERVER, CONF.MAIL_USER, CONF.MAIL_PASS)
 
-    ip = get_ip_address(conf.ifname)
-    sender = MailSender(conf.mail_server, conf.mail_user, conf.mail_pass)
-
-    if update_records(os.path.expanduser(conf.record_file), ip):
-        sender.send(conf.mail_from, conf.mail_to, conf.mail_subject, ip)
+    if update_records(os.path.expanduser(CONF.RECORD_FILE), ip):
+        sender.send(CONF.MAIL_FROM, CONF.MAIL_TO, CONF.MAIL_SUBJECT, ip)
 
 
 if __name__ == '__main__':

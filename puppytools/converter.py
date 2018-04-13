@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015, Yeolar <yeolar@gmail.com>
+# Copyright 2015 Yeolar
 #
 
 import argparse
@@ -9,8 +9,10 @@ import os
 import sys
 import textwrap
 
+from puppytools.util.colors import *
 
-PROG_NAME = 'pp-convert'
+
+PROG_NAME = os.path.splitext(os.path.basename(__file__))[0]
 
 MAP_SPLIT = ' = '
 INPUT_FLAG = '{INPUT}'
@@ -94,7 +96,7 @@ rename map file format:
 
 def main():
     ap = argparse.ArgumentParser(
-            prog=PROG_NAME,
+            prog='pp-' + PROG_NAME,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=textwrap.dedent(description()),
             epilog='Author: Yeolar <yeolar@gmail.com>')

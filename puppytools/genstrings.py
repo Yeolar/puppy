@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015, Yeolar <yeolar@gmail.com>
+# Copyright 2015 Yeolar
 #
 
 import argparse
@@ -10,7 +10,7 @@ import os
 import re
 
 
-PROG_NAME = 'pp-genstrings'
+PROG_NAME = os.path.splitext(os.path.basename(__file__))[0]
 
 
 DEF_TABLE = 'Localizable'
@@ -163,7 +163,7 @@ def description():
 
 def main():
     ap = argparse.ArgumentParser(
-            prog=PROG_NAME,
+            prog='pp-' + PROG_NAME,
             description=description(),
             epilog='Author: Yeolar <yeolar@gmail.com>')
     ap.add_argument('input', nargs='+',

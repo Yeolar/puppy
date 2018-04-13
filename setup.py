@@ -26,6 +26,7 @@ setup(
             'pp-genstrings = puppytools.genstrings:main',
             'pp-htmlparser = puppytools.htmlparser:main',
             'pp-ipsender = puppytools.ipsender:main',
+            'pp-rh = puppytools.rh:main',
             'pp-sed = puppytools.sed:main',
         ]
     },

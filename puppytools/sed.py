@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014, Yeolar <yeolar@gmail.com>
+# Copyright 2014 Yeolar
 #
 
 import argparse
@@ -11,71 +11,10 @@ import sys
 import tempfile
 import textwrap
 
-try:
-    import curses
-except ImportError:
-    curses = None
+from puppytools.util.colors import *
 
 
-PROG_NAME = 'pp-sed'
-
-
-def _stderr_supports_color():
-    color = False
-    if curses and hasattr(sys.stderr, 'isatty') and sys.stderr.isatty():
-        try:
-            curses.setupterm()
-            if curses.tigetnum("colors") > 0:
-                color = True
-        except Exception:
-            pass
-    return color
-
-
-class ColorFormatter(object):
-
-    def __init__(self):
-        if _stderr_supports_color():
-            fg_color = (curses.tigetstr('setaf') or
-                        curses.tigetstr('setf') or '')
-            self._colors = {
-                'r': curses.tparm(fg_color, 1), # Red
-                'g': curses.tparm(fg_color, 2), # Green
-                'y': curses.tparm(fg_color, 3), # Yellow
-                'b': curses.tparm(fg_color, 4), # Blue
-            }
-            self._bold = curses.tigetstr('bold')
-            self._normal = curses.tigetstr('sgr0')
-        else:
-            self._colors = {}
-            self._bold = ''
-            self._normal = ''
-
-    def format(self, message, color, bold=False):
-        return (self._colors.get(color, self._normal) +
-                (self._bold if bold else '') +
-                message + self._normal)
-
-
-class ColorWriter(object):
-
-    def __init__(self, formatter):
-        self.formatter = formatter
-
-    def write(self, message, fname=None, lineno=None):
-        if lineno:
-            lineno = self.formatter.format(str(lineno), 'g')
-            if fname:
-                fname = self.formatter.format(fname, 'y')
-                print '%s:%s:%s' % (fname, lineno, message)
-            else:
-                print '%s:%s' % (lineno, message)
-        else:
-            print message
-
-
-color_formatter = ColorFormatter()
-color_writer = ColorWriter(color_formatter)
+PROG_NAME = os.path.splitext(os.path.basename(__file__))[0]
 
 
 class ReplacePattern(object):
@@ -156,12 +95,22 @@ def replace_line(s, patterns, verbose=False, fname=None, lineno=None):
     def red_message(m):
         if len(m.groups()) > 0:
             return (m.string[m.start():m.start(1)] +
-                    color_formatter.format(m.group(1), 'r', bold=True) +
+                    red(m.group(1), bold=True) +
                     m.string[m.end(1):m.end()])
         else:
-            return color_formatter.format(m.group(0), 'r', bold=True)
+            return red(m.group(0), bold=True)
+
     def green_message(m):
-        return color_formatter.format(m.group(0), 'g', bold=True)
+        return green(m.group(0), bold=True)
+
+    def write(message, fname=None, lineno=None):
+        if lineno:
+            if fname:
+                print '%s:%s:%s' % (magenta(fname), green(lineno), message)
+            else:
+                print '%s:%s' % (green(lineno), message)
+        else:
+            print message
 
     if verbose:
         verbose_line1 = s
@@ -181,8 +130,8 @@ def replace_line(s, patterns, verbose=False, fname=None, lineno=None):
             verbose_line2 = p.topattern.sub(
                     green_message, s, count=p.count)
     if verbose and verbose_line1 != s:
-        color_writer.write(verbose_line1.rstrip(), fname, lineno)
-        color_writer.write(verbose_line2.rstrip(), fname, lineno)
+        write(verbose_line1.rstrip(), fname, lineno)
+        write(verbose_line2.rstrip(), fname, lineno)
     return s
 
 
@@ -191,7 +140,7 @@ def replace(f, output, patterns, show_fname, args):
     replaced = False
 
     with open(f) as fp:
-        fname = os.path.basename(f) if show_fname else None
+        fname = os.path.relpath(f) if show_fname else None
         lineno = 1
         for line in fp:
             repl_line = replace_line(line, patterns,
@@ -240,7 +189,7 @@ python special sequences:
 
 def main():
     ap = argparse.ArgumentParser(
-            prog=PROG_NAME,
+            prog='pp-' + PROG_NAME,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=textwrap.dedent(description()),
             epilog='Author: Yeolar <yeolar@gmail.com>')

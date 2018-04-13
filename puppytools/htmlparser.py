@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2014, Yeolar <yeolar@gmail.com>
+# Copyright 2014 Yeolar
 #
 
 import argparse
+import os
 import urllib2
 from HTMLParser import HTMLParser
 from xml.etree import ElementTree
 
+from puppytools.util.colors import *
 
-PROG_NAME = 'pp-htmlparser'
+
+PROG_NAME = os.path.splitext(os.path.basename(__file__))[0]
 
 
 class SingleParser(HTMLParser):
@@ -65,7 +68,7 @@ class SingleParser(HTMLParser):
 
 def main():
     ap = argparse.ArgumentParser(
-            prog=PROG_NAME,
+            prog='pp-' + PROG_NAME,
             description='Parse html, '
                         'extract attribute value and data of html element.',
             epilog='Author: Yeolar <yeolar@gmail.com>')
