@@ -28,6 +28,7 @@ setup(
             'pp-ipsender = puppytools.ipsender:main',
             'pp-rh = puppytools.rh:main',
             'pp-sed = puppytools.sed:main',
+            'pp-bazel2cmake = puppytools.bazel2cmake:main',
         ]
     },
 )
