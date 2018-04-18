@@ -21,6 +21,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
+            'pp-addr2line = puppytools.addr2line:main',
+            'pp-bazel2cmake = puppytools.bazel2cmake:main',
             'pp-config = puppytools.config:main',
             'pp-convert = puppytools.converter:main',
             'pp-genstrings = puppytools.genstrings:main',
@@ -28,7 +30,6 @@ setup(
             'pp-ipsender = puppytools.ipsender:main',
             'pp-rh = puppytools.rh:main',
             'pp-sed = puppytools.sed:main',
-            'pp-bazel2cmake = puppytools.bazel2cmake:main',
         ]
     },
 )
