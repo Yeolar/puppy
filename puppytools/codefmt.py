@@ -27,7 +27,7 @@ def format_cpp(input, indent=0):
 
 def main(indent=0):
     ap = argparse.ArgumentParser(
-            prog='pp' + PROG_NAME,
+            prog='pp-' + PROG_NAME,
             description='Code formatter.',
             epilog='Author: Yeolar <yeolar@gmail.com>')
     ap.add_argument('input', nargs='?', type=argparse.FileType('r'),

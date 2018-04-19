@@ -33,7 +33,7 @@ def calc_file_lines(file):
 
 def main():
     ap = argparse.ArgumentParser(
-            prog='pp' + PROG_NAME,
+            prog='pp-' + PROG_NAME,
             description='wc',
             epilog='Author: Yeolar <yeolar@gmail.com>')
     ap.add_argument('input', nargs='+',
