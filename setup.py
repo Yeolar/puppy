@@ -23,6 +23,9 @@ setup(
         'console_scripts': [
             'pp-addr2line = puppytools.addr2line:main',
             'pp-bazel2cmake = puppytools.bazel2cmake:main',
+            'pp-cf = puppytools.codefmt:main',
+            'pp-cf2 = puppytools.codefmt:main2',
+            'pp-cf4 = puppytools.codefmt:main4',
             'pp-config = puppytools.config:main',
             'pp-convert = puppytools.converter:main',
             'pp-genstrings = puppytools.genstrings:main',
@@ -30,6 +33,7 @@ setup(
             'pp-ipsender = puppytools.ipsender:main',
             'pp-rh = puppytools.rh:main',
             'pp-sed = puppytools.sed:main',
+            'pp-wc = puppytools.wc:main',
         ]
     },
 )

@@ -5,9 +5,17 @@
 #
 
 import os
+import subprocess
 import time
 
 from puppytools.util.colors import *
+
+
+def which(*cmds):
+    for cmd in cmds:
+        if subprocess.call(['which', cmd], stdout=subprocess.PIPE) == 0:
+            return cmd
+    return None
 
 
 def run(cmd, timing=False):
