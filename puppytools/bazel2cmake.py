@@ -28,7 +28,8 @@ class CCLibrary(object):
 
     def __init__(self, path,
             name='', srcs=[], hdrs=[], deps=[], visibility=[],
-            testonly=0, alwayslink=0, linkopts=[], data=[]):
+            testonly=0, alwayslink=0, linkstatic=0, deprecation='',
+            linkopts=[], data=[], tags=[], copts=[]):
         self.key = path_name_to_key(path, name)
         self.path = path
         self.name = name
@@ -43,8 +44,12 @@ class CCLibrary(object):
         self.visibility = visibility
         self.testonly = testonly
         self.alwayslink = alwayslink
+        self.linkstatic = linkstatic
+        self.deprecation = deprecation
         self.linkopts = linkopts
         self.data = data
+        self.tags = tags
+        self.copts = copts
 
     def __str__(self):
         return self.__dict__.__str__()
@@ -102,35 +107,44 @@ def log_block(func, *args, **kwargs):
     print cyan(')')
 
 
-def glob(*args, **kwargs):
-    log_block(package, *args, **kwargs)
-    return 'glob(%s, %s)' % (
+def func_msg(func, *args, **kwargs):
+    return '%s(%s, %s)' % (
+            func.__name__,
             ', '.join(['%s' % a for a in args]),
             ', '.join(['%s = %s' % (k,v) for k,v in kwargs.items()]))
 
 
+def glob(*args, **kwargs):
+    return []
+def if_mkl(*args, **kwargs):
+    return func_msg(if_mkl, *args, **kwargs)
+def select(*args, **kwargs):
+    return []
+def tf_copts(*args, **kwargs):
+    return []
+def tf_cuda_tests_tags(*args, **kwargs):
+    return func_msg(tf_cuda_tests_tags, *args, **kwargs)
+def tf_additional_binary_deps(*args, **kwargs):
+    return []
+
+###
+
 def package(*args, **kwargs):
     log_block(package, *args, **kwargs)
+def config_setting(*args, **kwargs):
+    log_block(config_setting, *args, **kwargs)
+def package_group(*args, **kwargs):
+    log_block(package_group, *args, **kwargs)
+def filegroup(*args, **kwargs):
+    log_block(filegroup, *args, **kwargs)
 
 
 def licenses(*args):
     log_block(licenses, *args)
-
-
 def load(*args):
     log_block(load, *args)
-
-
 def exports_files(*args):
     log_block(exports_files, *args)
-
-
-def package_group(*args, **kwargs):
-    log_block(package_group, *args, **kwargs)
-
-
-def filegroup(*args, **kwargs):
-    log_block(filegroup, *args, **kwargs)
 
 
 def cc_library(*args, **kwargs):
@@ -149,14 +163,14 @@ def cc_binary(*args, **kwargs):
 
 def py_library(*args, **kwargs):
     log_block(py_library, *args, **kwargs)
-
-
 def py_test(*args, **kwargs):
     log_block(py_test, *args, **kwargs)
-
-
 def py_binary(*args, **kwargs):
     log_block(py_binary, *args, **kwargs)
+
+
+def android_binary(*args, **kwargs):
+    log_block(android_binary, *args, **kwargs)
 
 
 def serving_proto_library(*args, **kwargs):
@@ -169,22 +183,34 @@ def serving_proto_library_py(*args, **kwargs):
     log_block(serving_proto_library_py, *args, **kwargs)
 
 
-def tf_pyclif_proto_library(*args, **kwargs):
-    log_block(tf_pyclif_proto_library, *args, **kwargs)
-
-
 def serving_go_grpc_library(*args, **kwargs):
     log_block(serving_go_grpc_library, *args, **kwargs)
 
 
+def tf_custom_op_library(*args, **kwargs):
+    log_block(tf_custom_op_library, *args, **kwargs)
+def tf_pyclif_proto_library(*args, **kwargs):
+    log_block(tf_pyclif_proto_library, *args, **kwargs)
+def tf_cc_test(*args, **kwargs):
+    log_block(tf_cc_test, *args, **kwargs)
+def tf_cc_binary(*args, **kwargs):
+    log_block(tf_cc_binary, *args, **kwargs)
+def tf_cc_shared_object(*args, **kwargs):
+    log_block(tf_cc_shared_object, *args, **kwargs)
+def tf_py_test(*args, **kwargs):
+    log_block(tf_py_test, *args, **kwargs)
+def tf_py_logged_benchmark(*args, **kwargs):
+    log_block(tf_py_logged_benchmark, *args, **kwargs)
+
+
+def sh_test(*args, **kwargs):
+    log_block(sh_test, *args, **kwargs)
 def sh_binary(*args, **kwargs):
     log_block(sh_binary, *args, **kwargs)
 
 
 def pkg_tar(*args, **kwargs):
     log_block(pkg_tar, *args, **kwargs)
-
-
 def pkg_deb(*args, **kwargs):
     log_block(pkg_deb, *args, **kwargs)
 
@@ -203,7 +229,7 @@ set(%(ROLE)s_PROTOS
 )
 
 foreach(proto ${%(ROLE)s_PROTOS})
-    execute_process(protoc --cpp_out=. --proto_path=%(root)s ${proto})
+    execute_process(protoc --cpp_out=. --proto_path=${PROJECT_SOURCE_DIR} ${proto})
 endforeach()
 """
     rel = get_curr_path(dir).replace('/', '_')
@@ -221,7 +247,6 @@ endforeach()
     except KeyError:
         print red('directory %s has no item' % dir)
     d = dict(
-        root=proj_root,
         role=rel,
         ROLE=rel.upper(),
         cc='\n    '.join(cc),
@@ -259,7 +284,10 @@ def main():
                 curr_path = get_curr_path(root)
                 print yellow('parse ' + path)
                 with open(path) as fp:
-                    exec fp.read()
+                    try:
+                        exec fp.read()
+                    except NameError as e:
+                        print blue('ignore: %s' % e)
 
     print yellow('lose deps:')
     for path, item_dict in path_item_dict.items():
