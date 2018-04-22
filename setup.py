@@ -26,7 +26,6 @@ setup(
             'pp-cf = puppytools.codefmt:main',
             'pp-cf2 = puppytools.codefmt:main2',
             'pp-cf4 = puppytools.codefmt:main4',
-            'pp-config = puppytools.config:main',
             'pp-convert = puppytools.converter:main',
             'pp-genstrings = puppytools.genstrings:main',
             'pp-htmlparser = puppytools.htmlparser:main',
